@@ -76,7 +76,11 @@ class CloudSearchBackend(BaseBackend):
 
         for doc_id, doc_values in self.documents.items():
             if all(self._match_cond(cond, field, value, doc_values['fields']) for cond, field, value in filters):
-                if term == "*":
+                terms = term.split()
+                if len(terms) > 1:
+                    if any(t in doc_values['fields']['text'] for t in terms):
+                        results.append({'id': doc_id, 'data': doc_values['fields']})
+                elif term == "*":
                     results.append({'id': doc_id, 'data': doc_values['fields']})
                 else:
                     if "*" in term:
