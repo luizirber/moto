@@ -23,7 +23,7 @@ def test_cloudsearch_connect_result_endpoints():
     assert domain.doc_service_endpoint.endswith('%s.cloudsearch.amazonaws.com' % REGION)
 
     assert domain.search_service_arn == "arn:aws:cs:%s:1234567890:search/%s" % (REGION, DOMAIN)
-    assert domain.search_service_endpoint.startswith('doc-%s' % DOMAIN)
+    assert domain.search_service_endpoint.startswith('search-%s' % DOMAIN)
     assert domain.search_service_endpoint.endswith('%s.cloudsearch.amazonaws.com' % REGION)
 
 @mock_cloudsearch
@@ -78,6 +78,7 @@ def test_cloudsearch_deletion():
 @mock_cloudsearch
 def test_cloudsearch_index_documents_resp():
     conn = boto.cloudsearch.connect_to_region(REGION)
+    conn.create_domain(DOMAIN)
     response = conn.index_documents(DOMAIN)
 
 

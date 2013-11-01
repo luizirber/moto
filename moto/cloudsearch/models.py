@@ -7,6 +7,7 @@ class CloudSearchBackend(BaseBackend):
 
     def __init__(self):
         super(CloudSearchBackend, self).__init__()
+        self.domains = {}
         self.documents = {}
 
     def _parse_query(self, query):
@@ -47,6 +48,16 @@ class CloudSearchBackend(BaseBackend):
             if doc[field] == value:
                 return True
         return False
+
+    def add_domain(self, domain_name):
+        self.domains[domain_name] = {}
+
+    def delete_domain(self, domain_name):
+        self.domains.pop(domain_name)
+
+    def index_documents(self, domain_name):
+        domain = self.domains[domain_name]
+        return ['member']
 
     def batch(self, sdf):
         adds = 0

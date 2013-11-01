@@ -20,11 +20,35 @@ class CloudSearchResponse(BaseResponse):
     def _get_multi_param(self, param_prefix):
         return [value[0] for key, value in self.querystring.items() if key.startswith(param_prefix)]
 
+    def create_domain(self):
+        domain_name = self._get_param('DomainName')
+        region = self.headers['host'].split('.')[1]
+        cloudsearch_backend.add_domain(domain_name)
+
+        template = Template(CREATE_DOMAIN_TEMPLATE)
+        return template.render(domain=domain_name, region=region)
+
+    def delete_domain(self):
+        domain_name = self._get_param('DomainName')
+        region = self.headers['host'].split('.')[1]
+        cloudsearch_backend.delete_domain(domain_name)
+
+        template = Template(DELETE_DOMAIN_TEMPLATE)
+        return template.render(domain=domain_name, region=region)
+
     def describe_domains(self):
         domain_names = self._get_multi_param('DomainNames')
-
+        region = self.headers['host'].split('.')[1]
         template = Template(DESCRIBE_DOMAINS_TEMPLATE)
-        return template.render(domains=domain_names)
+        return template.render(domains=domain_names, region=region)
+
+    def index_documents(self):
+        domain_name = self._get_param('DomainName')
+        region = self.headers['host'].split('.')[1]
+        members = cloudsearch_backend.index_documents(domain_name)
+
+        template = Template(INDEX_DOCUMENTS_TEMPLATE)
+        return template.render(domain=domain_name, members=members)
 
     def documents_batch_response(self, request, full_url, headers):
         if hasattr(request, 'body'):
@@ -106,8 +130,8 @@ DESCRIBE_DOMAINS_TEMPLATE = """<DescribeDomainsResponse xmlns="http://cloudsearc
       <member>
         <SearchPartitionCount>1</SearchPartitionCount>
         <SearchService>
-          <Arn>arn:aws:cs:us-east-1:160241911954:search/site</Arn>
-          <Endpoint>search-site-zl2syfqt56dgygqk2a3gismj6q.us-east-1.cloudsearch.amazonaws.com</Endpoint>
+          <Arn>arn:aws:cs:{{region}}:1234567890:search/{{domain}}</Arn>
+          <Endpoint>search-{{domain}}-zl2syfqt56dgygqk2a3gismj6q.{{region}}.cloudsearch.amazonaws.com</Endpoint>
         </SearchService>
         <NumSearchableDocs>200658</NumSearchableDocs>
         <SearchInstanceType>search.m1.small</SearchInstanceType>
@@ -115,12 +139,12 @@ DESCRIBE_DOMAINS_TEMPLATE = """<DescribeDomainsResponse xmlns="http://cloudsearc
         <DomainId>160241911954/site</DomainId>
         <Processing>false</Processing>
         <SearchInstanceCount>1</SearchInstanceCount>
-        <DomainName>site</DomainName>
+        <DomainName>{{domain}}</DomainName>
         <RequiresIndexDocuments>false</RequiresIndexDocuments>
         <Deleted>false</Deleted>
         <DocService>
           <Arn>arn:aws:cs:us-east-1:160241911954:doc/site</Arn>
-          <Endpoint>doc-site-zl2syfqt56dgygqk2a3gismj6q.us-east-1.cloudsearch.amazonaws.com</Endpoint>
+          <Endpoint>doc-{{domain}}-zl2syfqt56dgygqk2a3gismj6q.{{region}}.cloudsearch.amazonaws.com</Endpoint>
         </DocService>
       </member>
       {% endfor %}
@@ -131,3 +155,76 @@ DESCRIBE_DOMAINS_TEMPLATE = """<DescribeDomainsResponse xmlns="http://cloudsearc
   </ResponseMetadata>
 </DescribeDomainsResponse>
 """
+
+CREATE_DOMAIN_TEMPLATE = '''
+<CreateDomainResponse xmlns="http://cloudsearch.amazonaws.com/doc/2011-02-01">
+  <CreateDomainResult>
+    <DomainStatus>
+      <SearchPartitionCount>0</SearchPartitionCount>
+      <SearchService>
+        <Arn>arn:aws:cs:{{region}}:1234567890:search/{{domain}}</Arn>
+        <Endpoint>search-{{domain}}-userdomain.{{region}}.cloudsearch.amazonaws.com</Endpoint>
+      </SearchService>
+      <NumSearchableDocs>0</NumSearchableDocs>
+      <Created>true</Created>
+      <DomainId>1234567890/{{domain}}</DomainId>
+      <Processing>false</Processing>
+      <SearchInstanceCount>0</SearchInstanceCount>
+      <DomainName>{{domain}}</DomainName>
+      <RequiresIndexDocuments>false</RequiresIndexDocuments>
+      <Deleted>false</Deleted>
+      <DocService>
+        <Arn>arn:aws:cs:{{region}}:1234567890:doc/{{domain}}</Arn>
+        <Endpoint>doc-{{domain}}-userdomain.{{region}}.cloudsearch.amazonaws.com</Endpoint>
+      </DocService>
+    </DomainStatus>
+  </CreateDomainResult>
+  <ResponseMetadata>
+    <RequestId>00000000-0000-0000-0000-000000000000</RequestId>
+  </ResponseMetadata>
+</CreateDomainResponse>
+'''
+
+DELETE_DOMAIN_TEMPLATE = '''
+<DeleteDomainResponse xmlns="http://cloudsearch.amazonaws.com/doc/2011-02-01">
+  <DeleteDomainResult>
+    <DomainStatus>
+      <SearchPartitionCount>0</SearchPartitionCount>
+      <SearchService>
+        <Arn>arn:aws:cs:{{region}}:1234567890:search/{{domain}}</Arn>
+        <Endpoint>search-{{domain}}-userdomain.{{region}}.cloudsearch.amazonaws.com</Endpoint>
+      </SearchService>
+      <NumSearchableDocs>0</NumSearchableDocs>
+      <Created>true</Created>
+      <DomainId>1234567890/demo</DomainId>
+      <Processing>false</Processing>
+      <SearchInstanceCount>0</SearchInstanceCount>
+      <DomainName>{{domain}}</DomainName>
+      <RequiresIndexDocuments>false</RequiresIndexDocuments>
+      <Deleted>false</Deleted>
+      <DocService>
+        <Arn>arn:aws:cs:{{region}}:1234567890:doc/{{domain}}</Arn>
+        <Endpoint>doc-{{domain}}-userdomain.{{region}}.cloudsearch.amazonaws.com</Endpoint>
+      </DocService>
+    </DomainStatus>
+  </DeleteDomainResult>
+  <ResponseMetadata>
+    <RequestId>00000000-0000-0000-0000-000000000000</RequestId>
+  </ResponseMetadata>
+</DeleteDomainResponse>
+'''
+
+INDEX_DOCUMENTS_TEMPLATE = '''
+<IndexDocumentsResponse xmlns="http://cloudsearch.amazonaws.com/doc/2011-02-01">
+  <IndexDocumentsResult>
+    <FieldNames>
+      {% for member in members %}
+      <member>{{member}}</member>
+      {% endfor %}
+    </FieldNames>
+  </IndexDocumentsResult>
+  <ResponseMetadata>
+    <RequestId>eb2b2390-6bbd-11e2-ab66-93f3a90dcf2a</RequestId>
+  </ResponseMetadata>
+</IndexDocumentsResponse>
+'''
